@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import { searchImages } from '../servises/api';
 import Searchbar from './Searchbar/Searchbar';
@@ -9,71 +9,62 @@ import Modal from './Modal/Modal';
 
 import css from './App.module.css';
 
-export class App extends Component {
-  state = {
-    search: '',
-    items: [],
-    loading: false,
-    error: null,
-    page: 1,
-    currentImage: null,
-  };
+const App = () => {
+  const [search, setSearch] = useState('');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [currentImage, setCurrentImage] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { search, page } = this.state;
-    if (prevState.search !== search || prevState.page !== page) {
-      this.fetchImages();
+  useEffect(() => {
+    if (search) {
+      const fetchImages = async () => {
+        try {
+          setLoading(true);
+          const data = await searchImages(search, page);
+          setItems(prevItems => [...prevItems, ...data]);
+        } catch (error) {
+          setError(error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchImages();
     }
-  }
+  }, [search, page]);
 
-  async fetchImages() {
-    try {
-      this.setState({ loading: true });
-      const { search, page } = this.state;
-      const data = await searchImages(search, page);
-      this.setState(({ items }) => ({
-        items: [...items, ...data],
-      }));
-    } catch (error) {
-      this.setState({ error: error.message });
-    } finally {
-      this.setState({ loading: false });
-    }
-  }
-
-  searchImages = ({ search }) => {
-    this.setState({ search, items: [], page: 1 });
+  const onSearchImages = ({ search }) => {
+    setSearch(search);
+    setItems([]);
+    setPage(1);
   };
 
-  openImage = img => {
-    this.setState({
-      currentImage: img,
-    });
+  const openImage = img => {
+    setCurrentImage(img);
   };
 
-  closeModal = () => {
-    this.setState({ currentImage: null });
+  const closeModal = () => {
+    setCurrentImage(null);
   };
 
-  loadMore = () => {
-    this.setState(({ page }) => ({ page: page + 1 }));
+  const loadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  render() {
-    const { searchImages, loadMore, openImage, closeModal } = this;
-    const { items, error, loading, currentImage } = this.state;
+  return (
+    <div className={css.App}>
+      <Searchbar onSubmit={onSearchImages} />
+      <ImageGallery items={items} openImage={openImage} />
+      {error && <p>{error}</p>}
+      {loading && <Loader />}
+      {Boolean(items.length) && !loading && <Button loadMore={loadMore} />}
+      {currentImage && (
+        <Modal currentImage={currentImage} closeModal={closeModal} />
+      )}
+    </div>
+  );
+};
 
-    return (
-      <div className={css.App}>
-        <Searchbar onSubmit={searchImages} />
-        <ImageGallery items={items} openImage={openImage} />
-        {error && <p>{error}</p>}
-        {loading && <Loader />}
-        {Boolean(items.length) && !loading && <Button loadMore={loadMore} />}
-        {currentImage && (
-          <Modal currentImage={currentImage} closeModal={closeModal} />
-        )}
-      </div>
-    );
-  }
-}
+export default App;

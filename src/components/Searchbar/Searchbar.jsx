@@ -1,56 +1,51 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import css from './Searchbar.module.css';
 
-class Searchbar extends Component {
-  state = {
-    search: '',
-  };
+const Searchbar = ({ onSubmit }) => {
+  const [state, setState] = useState('');
 
-  handleChange = ({ target }) => {
+  const handleChange = ({ target }) => {
     const { name, value } = target;
-    this.setState({ [name]: value });
+    setState(prevState => {
+      return { ...prevState, [name]: value };
+    });
   };
 
-  handleSubmit = e => {
+  const { search } = state;
+
+  const handleSubmit = e => {
     e.preventDefault();
-    const { onSubmit } = this.props;
-    onSubmit({ ...this.state });
-    this.reset();
+    onSubmit({ ...state });
+
+    setState({
+      search: '',
+    });
   };
 
-  reset = () => {
-    this.setState({ search: '' });
-  };
+  return (
+    <header className={css.Searchbar}>
+      <form onSubmit={handleSubmit} className={css.SearchForm}>
+        <button type="submit" className={css.SearchForm_button}>
+          <span className={css.SearchForm_button_label}>Search</span>
+        </button>
 
-  render() {
-    const { search } = this.state;
-    const { handleChange, handleSubmit } = this;
-
-    return (
-      <header className={css.Searchbar}>
-        <form onSubmit={handleSubmit} className={css.SearchForm}>
-          <button type="submit" className={css.SearchForm_button}>
-            <span className={css.SearchForm_button_label}>Search</span>
-          </button>
-
-          <input
-            value={search}
-            name="search"
-            onChange={handleChange}
-            className={css.SearchForm_input}
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            required
-          />
-        </form>
-      </header>
-    );
-  }
-}
+        <input
+          value={search}
+          name="search"
+          onChange={handleChange}
+          className={css.SearchForm_input}
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          required
+        />
+      </form>
+    </header>
+  );
+};
 
 export default Searchbar;
 
